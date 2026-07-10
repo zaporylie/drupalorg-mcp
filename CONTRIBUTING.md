@@ -41,6 +41,8 @@ There's no test suite yet — verify changes against the live API with `curl` be
 
 Publishing is automated: `.github/workflows/publish.yml` runs on any pushed tag matching `v*`, checks the tag matches `package.json`'s version, then runs `npm publish`.
 
+Before tagging, add an entry to `CHANGELOG.md` for the new version.
+
 ```bash
 npm pack --dry-run     # sanity-check what would be published
 npm version patch|minor|major   # bumps package.json and creates a git tag
