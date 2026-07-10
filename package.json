@@ -1,0 +1,20 @@
+{
+  "name": "drupalorg-mcp",
+  "version": "0.1.0",
+  "description": "MCP server wrapping drupal.org's public api-d7 REST API (issues, projects, maintainers).",
+  "type": "module",
+  "bin": { "drupalorg-mcp": "./index.js" },
+  "files": ["index.js"],
+  "engines": { "node": ">=18" },
+  "keywords": ["mcp", "model-context-protocol", "drupal", "drupal.org"],
+  "license": "GPL-2.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zaporylie/drupalorg-mcp.git"
+  },
+  "homepage": "https://github.com/zaporylie/drupalorg-mcp",
+  "bugs": "https://github.com/zaporylie/drupalorg-mcp/issues",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  }
+}
