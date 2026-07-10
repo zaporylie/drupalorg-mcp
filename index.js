@@ -10,6 +10,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 
 const BASE = "https://www.drupal.org/api-d7";
+const JSONAPI_BASE = "https://www.drupal.org/jsonapi";
 const UA = "drupalorg-mcp/0.1 (+https://github.com/zaporylie/drupalorg-mcp)";
 
 // Optional: set DRUPALORG_USERNAME to enable author: "me" in tools without
@@ -49,6 +50,83 @@ async function d(path, params = {}) {
   const res = await fetch(url, { headers: { "User-Agent": UA, Accept: "application/json" } });
   if (!res.ok) throw new Error(`drupal.org API ${res.status}: ${url}`);
   return res.json();
+}
+
+// Credit/sponsorship data lives outside api-d7 entirely, in drupal.org's JSON:API
+// (node--contribution_record / paragraph--contributor). api-d7 exposes no credit
+// fields at all (verified: node.json with drupalorg_extra_credit=1 has none).
+async function jsonapi(path, params = {}) {
+  const url = new URL(`${JSONAPI_BASE}/${path}`);
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null) url.searchParams.set(k, v);
+  }
+  const res = await fetch(url, {
+    headers: { "User-Agent": UA, Accept: "application/vnd.api+json" },
+  });
+  if (!res.ok) throw new Error(`drupal.org JSON:API ${res.status}: ${url}`);
+  return res.json();
+}
+
+// Accepts a numeric nid or a drupal.org issue/node URL and returns the nid.
+function extractNid(issue) {
+  if (/^\d+$/.test(String(issue))) return Number(issue);
+  const m = String(issue).match(/\/(?:node|issues)\/(\d+)/);
+  if (!m) throw new Error(`Could not extract a node ID from "${issue}"`);
+  return Number(m[1]);
+}
+
+// One node--contribution_record is created per credited issue/MR, holding a list
+// of paragraph--contributor entries (one per credited user, each optionally
+// attributed to one or more organizations). If no contribution_record exists for
+// an issue's canonical node URL, credit was never saved for it at all — this is
+// the only way to detect that; api-d7 has no equivalent.
+async function getIssueCredits(issue) {
+  const nid = extractNid(issue);
+  const uri = `https://www.drupal.org/node/${nid}`;
+  const data = await jsonapi("node/contribution_record", {
+    "filter[field_source_link.uri]": uri,
+    include: "field_contributors.field_contributor_user,field_contributors.field_contributor_organisation",
+    "fields[node--contribution_record]": "field_project_name,field_source_link,field_contributors",
+    "fields[paragraph--contributor]":
+      "field_credit_this_contributor,field_contributor_volunteer,field_contributor_user,field_contributor_organisation",
+    "fields[user--user]": "display_name",
+    "fields[node--organization]": "title",
+  });
+
+  if (!data.data?.length) {
+    return {
+      found: false,
+      issue_url: uri,
+      message: "No contribution record found for this issue — credit was not saved (or the issue predates drupal.org's credit system).",
+    };
+  }
+
+  const included = data.included ?? [];
+  const byId = new Map(included.map((i) => [i.id, i]));
+  const record = data.data[0];
+  const contributorRefs = record.relationships?.field_contributors?.data ?? [];
+
+  const contributors = contributorRefs.map((ref) => {
+    const p = byId.get(ref.id);
+    if (!p) return { paragraph_id: ref.id, resolvable: false };
+    const userRef = p.relationships?.field_contributor_user?.data;
+    const user = userRef ? byId.get(userRef.id) : null;
+    const orgRefs = p.relationships?.field_contributor_organisation?.data ?? [];
+    const organizations = orgRefs.map((o) => byId.get(o.id)?.attributes?.title ?? o.id);
+    return {
+      username: user?.attributes?.display_name ?? null,
+      credited: p.attributes?.field_credit_this_contributor ?? null,
+      volunteer: p.attributes?.field_contributor_volunteer ?? null,
+      organizations,
+    };
+  });
+
+  return {
+    found: true,
+    issue_url: uri,
+    project: record.attributes?.field_project_name,
+    contributors,
+  };
 }
 
 // Maintainers live outside api-d7, at /project/<machine_name>/maintainers.json.
@@ -220,6 +298,17 @@ const TOOLS = [
       required: ["nid"],
     },
   },
+  {
+    name: "get_issue_credits",
+    description: "Check contribution credit for an issue: who was credited, whether volunteer or sponsored, and which organization(s) each contributor was attributed to. Uses drupal.org's JSON:API contribution_record data (api-d7 has no credit fields at all). If no record is found, credit was never saved for this issue. Useful for auditing missing credit or missing org attribution.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        issue: { type: "string", description: "Issue node ID (numeric), or a full drupal.org issue/node URL." },
+      },
+      required: ["issue"],
+    },
+  },
 ];
 
 server.setRequestHandler(ListToolsRequestSchema, async () => ({ tools: TOOLS }));
@@ -311,6 +400,11 @@ server.setRequestHandler(CallToolRequestSchema, async (req) => {
         body: c.comment_body?.value ?? c.comment_body,
       }));
       return { content: [{ type: "text", text: JSON.stringify(comments, null, 2) }] };
+    }
+
+    if (name === "get_issue_credits") {
+      const credits = await getIssueCredits(args.issue);
+      return { content: [{ type: "text", text: JSON.stringify(credits, null, 2) }] };
     }
 
     throw new Error(`Unknown tool: ${name}`);
