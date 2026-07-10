@@ -1,6 +1,6 @@
 {
   "name": "drupalorg-mcp",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "MCP server wrapping drupal.org's public api-d7 REST API (issues, projects, maintainers).",
   "type": "module",
   "bin": {
