@@ -313,7 +313,19 @@ const TOOLS = [
 // Server/Transport pair per request rather than a shared singleton.
 export function createServer() {
   const server = new Server(
-    { name: "drupalorg-mcp", version: "0.2.0" },
+    {
+      name: "drupalorg-mcp",
+      version: "0.2.0",
+      // Druplicon, served from drupal.org itself — avoids bundling/redistributing
+      // the Drupal Association's trademarked logo in this repo.
+      icons: [
+        {
+          src: "https://www.drupal.org/misc/druplicon.png",
+          mimeType: "image/png",
+          sizes: ["88x100"],
+        },
+      ],
+    },
     { capabilities: { tools: {} } }
   );
 
