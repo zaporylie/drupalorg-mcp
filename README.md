@@ -60,9 +60,13 @@ node index.js
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 
+### Hosting a remote instance (e.g. for claude.ai custom connectors)
+
+The stdio server above only works with local MCP clients. To add this as a **claude.ai custom connector**, host it as a remote HTTP server instead — see [DEPLOYMENT.md](DEPLOYMENT.md) for the Docker + reverse-proxy setup.
+
 ## Notes
 
-- The `UA` header in `index.js` identifies this tool to drupal.org's API — update it if you fork/republish under a different repo.
+- The `UA` header in `server-core.js` identifies this tool to drupal.org's API — update it if you fork/republish under a different repo.
 - All status/priority/category values are translated from drupal.org's internal numeric IDs to readable labels.
 
 ## Contributing

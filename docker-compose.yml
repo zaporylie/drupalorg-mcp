@@ -1,0 +1,22 @@
+services:
+  drupalorg-mcp:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      MCP_ALLOWED_HOSTS: ${DOMAIN}
+    networks:
+      - edge
+    # No ports: published — reached only via the shared network by Traefik,
+    # which terminates TLS and routes by the labels below. See DEPLOYMENT.md.
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.drupalorg-mcp.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.drupalorg-mcp.entrypoints=${TRAEFIK_ENTRYPOINT}
+      - traefik.http.routers.drupalorg-mcp.tls.certresolver=${TRAEFIK_CERTRESOLVER}
+      - traefik.http.services.drupalorg-mcp.loadbalancer.server.port=3000
+
+networks:
+  edge:
+    external: true
