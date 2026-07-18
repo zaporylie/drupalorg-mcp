@@ -7,6 +7,7 @@
 // Follows the SDK's own stateless pattern (examples/server/simpleStatelessStreamableHttp.js):
 // a fresh Server + Transport per request, since sessionIdGenerator is undefined.
 
+import express from "express";
 import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { createServer } from "./server-core.js";
@@ -17,12 +18,19 @@ const ALLOWED_HOSTS = (process.env.MCP_ALLOWED_HOSTS || "")
   .map((h) => h.trim())
   .filter(Boolean);
 
-const app = createMcpExpressApp({
-  host: "0.0.0.0",
-  ...(ALLOWED_HOSTS.length ? { allowedHosts: ALLOWED_HOSTS } : {}),
-});
-
+// /health must be reachable before the SDK's hostHeaderValidation middleware
+// runs — Docker's own HEALTHCHECK hits http://127.0.0.1:PORT/health, whose
+// Host header won't match MCP_ALLOWED_HOSTS (the public domain), so it would
+// otherwise get rejected and mark the container unhealthy.
+const app = express();
 app.get("/health", (_req, res) => res.status(200).send("ok"));
+
+app.use(
+  createMcpExpressApp({
+    host: "0.0.0.0",
+    ...(ALLOWED_HOSTS.length ? { allowedHosts: ALLOWED_HOSTS } : {}),
+  })
+);
 
 app.post("/mcp", async (req, res) => {
   const server = createServer();

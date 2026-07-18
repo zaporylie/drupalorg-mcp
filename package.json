@@ -27,6 +27,7 @@
   "homepage": "https://github.com/zaporylie/drupalorg-mcp",
   "bugs": "https://github.com/zaporylie/drupalorg-mcp/issues",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0"
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "express": "^5.2.1"
   }
 }
