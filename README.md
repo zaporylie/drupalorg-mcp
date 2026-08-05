@@ -69,6 +69,13 @@ The stdio server above only works with local MCP clients. To add this as a **cla
 - The `UA` header in `server-core.js` identifies this tool to drupal.org's API — update it if you fork/republish under a different repo.
 - All status/priority/category values are translated from drupal.org's internal numeric IDs to readable labels.
 
+## Related: drupalcode-mcp
+
+- This server (drupalorg-mcp) covers drupal.org itself — issue queues, projects, maintainers — via the public api-d7 REST API; read-only, no authentication.
+- Its sibling, [drupalcode-mcp](https://github.com/zaporylie/drupalcode-mcp), covers git.drupalcode.org (Drupal's GitLab): code, merge requests, CI. It is authenticated — OAuth against git.drupalcode.org, each user acts as themselves.
+- A hosted instance of drupalcode-mcp is available at `https://drupalcode.piasecki.dev/mcp` — add it as a custom connector in claude.ai or any remote MCP client. Best-effort, no SLA.
+- The two complement each other: issue metadata and credits live on drupal.org, code and MRs live on git.drupalcode.org — use both for full coverage of a drupal.org project.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, code structure, and publishing steps.
