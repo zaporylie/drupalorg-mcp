@@ -64,6 +64,8 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for the development workflow.
 
 The stdio server above only works with local MCP clients. To add this as a **claude.ai custom connector**, host it as a remote HTTP server instead — see [DEPLOYMENT.md](DEPLOYMENT.md) for the Docker + reverse-proxy setup.
 
+A hosted instance is available at `https://drupalorg.piasecki.dev/mcp` — add it as a custom connector in claude.ai or any remote MCP client. Best-effort, no SLA.
+
 ## Notes
 
 - The `UA` header in `server-core.js` identifies this tool to drupal.org's API — update it if you fork/republish under a different repo.
